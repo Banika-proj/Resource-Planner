@@ -10,4 +10,4 @@ not_found_handling = "single-page-application"
 [[d1_databases]]
 binding = "DB"
 database_name = "resource-planner-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "aa71e757-6bad-4f1a-a60f-238a515c2340"
