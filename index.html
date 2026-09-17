@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Resource Planner</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    Resource Planner
+  </div>
+  <nav>
+    <button class="active" onclick="showPage('logger',this)">Time Logger</button>
+    <button onclick="showPage('dashboard',this)">Dashboard</button>
+    <button onclick="showPage('logs',this)">All Logs</button>
+    <button onclick="showPage('settings',this)">Settings</button>
+  </nav>
+</header>
+
+<!-- ══ TIME LOGGER ══ -->
+<div id="page-logger" class="app active">
+<div class="container">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h1 class="font-bold" style="font-size:1.5rem">Time Logger</h1>
+      <p class="text-muted text-sm mt-1">Log your daily task minutes.</p>
+    </div>
+    <div class="flex gap-3 items-end">
+      <div>
+        <label>Member</label>
+        <select id="logger-member" style="width:180px" onchange="refreshLogger()"></select>
+      </div>
+      <div>
+        <label>Date</label>
+        <input type="date" id="logger-date" style="width:150px" onchange="refreshLogger()" />
+      </div>
+    </div>
+  </div>
+
+  <div class="logger-layout">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Availability</div></div>
+        <div class="card-body" id="avail-panel" style="padding-top:8px;padding-bottom:8px">
+          <p class="text-muted text-sm">Select a member</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Daily Summary</div></div>
+        <div class="card-body" id="summary-panel">
+          <p class="text-muted text-sm">No data yet</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header flex items-center justify-between">
+        <div>
+          <div class="card-title">Tasks</div>
+          <div class="card-desc" id="task-count-desc"></div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-outline" onclick="openAddTaskDialog()">+ Add Task</button>
+          <button class="btn btn-primary" id="save-btn" onclick="saveEntries()" disabled>Save</button>
+        </div>
+      </div>
+      <div class="card-body" id="task-list-area">
+        <p class="text-muted text-sm">Loading…</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ ADD TASK DIALOG ══ -->
+<div id="task-dialog-overlay" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeAddTaskDialog()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="card-title">Add Task</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddTaskDialog()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-xs text-muted mb-3">This creates a recurring task for the selected member — it will show up in their list every day.</p>
+      <div class="mb-3">
+        <label>Task</label>
+        <input id="dialog-task-name" placeholder="Task name…" onkeydown="if(event.key==='Enter')submitAddTask()" />
+      </div>
+      <div class="mb-3">
+        <label>Task Type</label>
+        <select id="dialog-task-type"></select>
+      </div>
+    </div>
+    <div class="modal-footer flex gap-2 justify-end">
+      <button class="btn btn-outline btn-sm" onclick="closeAddTaskDialog()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitAddTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="page-dashboard" class="app">
+<div class="container">
+  <div class="flex items-center justify-between mb-4" style="flex-wrap:wrap;gap:8px">
+    <h1 class="font-bold" style="font-size:1.5rem">Dashboard</h1>
+    <div class="flex gap-2 items-end" style="flex-wrap:wrap">
+      <div>
+        <label>Member</label>
+        <select id="dash-member" style="width:160px" onchange="refreshDashboard()"></select>
+      </div>
+      <div>
+        <label>From</label>
+        <input type="date" id="dash-start" style="width:145px" onchange="refreshDashboard()" />
+      </div>
+      <div>
+        <label>To</label>
+        <input type="date" id="dash-end" style="width:145px" onchange="refreshDashboard()" />
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-grid mb-4" id="kpi-grid"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Utilisation by Member</div></div>
+      <div class="card-body" id="util-chart"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Top Task Types</div></div>
+      <div class="card-body" id="type-chart"></div>
+    </div>
+  </div>
+
+  <div class="grid-3 mt-4">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Time Spent by Task Type (%)</div></div>
+      <div class="card-body" id="type-donut-chart"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Weekly Utilization Trend</div></div>
+      <div class="card-body" id="weekly-trend-chart"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Time Logged vs Available</div></div>
+      <div class="card-body" id="gauge-chart"></div>
+    </div>
+  </div>
+
+   <div class="card mt-4">
+     <div class="card-header">
+       <div class="card-title">Monthly Task Type Distribution</div>
+       <div class="card-desc">Logged time by task category across the selected months</div>
+     </div>
+     <div class="card-body" id="monthly-type-chart"></div>
+   </div>
+</div>
+</div>
+
+<!-- ══ ALL LOGS ══ -->
+<div id="page-logs" class="app">
+<div class="container">
+  <div class="flex items-center justify-between mb-4" style="flex-wrap:wrap;gap:8px">
+    <h1 class="font-bold" style="font-size:1.5rem">All Logs</h1>
+    <div class="flex gap-2 items-end" style="flex-wrap:wrap">
+      <div>
+        <label>Member</label>
+        <select id="logs-member" style="width:160px" onchange="refreshLogs()"></select>
+      </div>
+      <div>
+        <label>From</label>
+        <input type="date" id="logs-start" style="width:145px" onchange="refreshLogs()" />
+      </div>
+      <div>
+        <label>To</label>
+        <input type="date" id="logs-end" style="width:145px" onchange="refreshLogs()" />
+      </div>
+      <button class="btn btn-outline btn-sm" style="align-self:flex-end" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Member</th><th>Task</th><th>Type</th><th class="text-right">Minutes</th>
+        </tr></thead>
+        <tbody id="logs-body"></tbody>
+        <tfoot id="logs-foot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div id="page-settings" class="app">
+<div class="container">
+  <h1 class="font-bold mb-4" style="font-size:1.5rem">Settings</h1>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Team Members</div></div>
+      <div class="card-body">
+        <div id="members-list" class="space-y mb-3"></div>
+        <div class="flex gap-2">
+          <input id="new-member-name" placeholder="Member name…" style="flex:1" onkeydown="if(event.key==='Enter')addMember()" />
+          <button class="btn btn-primary btn-sm" onclick="addMember()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Daily Capacity (minutes)</div></div>
+      <div class="card-body">
+        <div class="space-y" id="avail-settings"></div>
+        <p class="text-xs text-muted mt-2">Working minutes per availability type (e.g. Full Day = 400). Shared with everyone using this app.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+name = "resource-planner"
+compatibility_date = "2026-08-20"
+
+[assets]
+directory = "."
+not_found_handling = "single-page-application"
+
+# Shared team data lives in this D1 database. Create it once (see README),
+# then replace database_id below with the id it gives you.
+[[d1_databases]]
+binding = "DB"
+database_name = "resource-planner-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
